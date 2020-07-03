@@ -1,6 +1,7 @@
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
+import collection from '../pages/collection/collection';
 
 var firebaseConfig = {
     apiKey: "AIzaSyAl-GLm7V21mAH00tHBbyfZGGf2yy0X03Y",
@@ -41,6 +42,35 @@ export const createUserProfileDocument = async (userAuth, additionalData) => {
 
 export const auth = firebase.auth();
 export const firestore = firebase.firestore();
+
+export const addCollectionAndDocuments = async (collectionKey, objectsToAdd) => {
+  const collectionRef = firestore.collection(collectionKey);
+  
+  const batch = firestore.batch();
+  objectsToAdd.forEach(element => {
+    const newDocRef = collectionRef.doc();
+    batch.set(newDocRef, element);
+  });
+
+  return await batch.commit();
+}
+
+export const convertCollectionsSnapshotToMap = collections => {
+  const transformedCollection = collections.docs.map(doc => {
+    const { title, items } = doc.data();
+    return {
+      routeName: encodeURI(title.toLowerCase()),
+      id: doc.id,
+      title,
+      items
+    }
+  });
+  
+  return transformedCollection.reduce((acc,collection) => {
+    acc[collection.title.toLowerCase()] = collection;
+    return acc;
+  }, {});
+}
 
 const provider = new firebase.auth.GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
